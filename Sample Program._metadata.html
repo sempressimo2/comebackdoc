@@ -1,0 +1,126 @@
+
+                <!DOCTYPE html>
+                <html lang='en'>
+                <head>
+                    <meta charset='UTF-8'>
+                    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                    <title>Code Analysis Report</title>
+                    
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; color: #333; }
+                    .container { width: 80%; margin: 20px auto; background: #fff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+                    h1, h2 { color: #5a5a5a; }
+                    ul { list-style-type: none; padding: 0; }
+                    li { margin-bottom: 10px; }
+                    .method { margin-bottom: 20px; }
+                    .source-code { background-color: #eee; padding: 10px; margin-top: 20px; overflow-x: auto; }
+                    pre { margin: 0; }
+                </style>
+                </head>
+                <body>
+                    <div class='container'>
+                        <h1>Code Analysis Report</h1>
+                        <div class='section'>
+                            <h2>Summary</h2>
+                            <p>The C# Program is a console application in the 'ChatGPT_API' namespace. It interacts with the API of an AI model, possibly GPT-3 from OpenAI, to summarize the details of the C# source code files in a specified directory. The application uses the HttpClient class which sends HTTP requests and receives HTTP responses to interact with the AI model. The request details are obtained from the files, which are used to prompt the AI model for a summary. The responses from the model are then written as metadata in a new file, stored in a specific directory. This process repeats for all identified C# files in the specified directory.</p>
+                        </div>
+                        <div class='section'>
+                            <h2>DTOs</h2>
+                            <ul></ul>
+                        </div>
+                        <div class='section'>
+                            <h2>Models</h2>
+                            <ul></ul>
+                        </div>
+                        <div class='section'>
+                            <h2>Libraries</h2>
+                            <ul><li>System.Text</li><li>Newtonsoft.Json</li><li>System.Net.Http</li><li>System.IO</li></ul>
+                        </div>
+                        <div class='section'>
+                            <h2>Methods</h2>
+                            <div class='method'><h3>Main</h3><p>The Main method of the program. It is the entry point that initializes the HttpClient with a provided apiKey, gets source code files from a directory, sends the content of each file as a request to the AI model, gets the response, records the response as metadata file, and repeats for all files in the directory.</p></div>
+<div class='method'><h3>GetFiles</h3><p>Fetches all .cs files from the specified directory and its subdirectories.</p></div>
+<div class='method'><h3>ReadAllText</h3><p>Reads all characters from a file.</p></div>
+<div class='method'><h3>SerializeObject</h3><p>Serializes the given object into a JSON string.</p></div>
+<div class='method'><h3>PostAsync</h3><p>Sends a POST request to the specified Uri and returns the response.</p></div>
+<div class='method'><h3>GetRelativePath</h3><p>Gets the relative path of a file from the specified path.</p></div>
+<div class='method'><h3>CreateDirectory</h3><p>Creates a new directory.</p></div>
+<div class='method'><h3>ChangeExtension</h3><p>Changes the extension of a path string.</p></div>
+<div class='method'><h3>WriteAllTextAsync</h3><p>Asynchronously creates a new file, writes a collection of strings to the file, and then closes the file.</p></div>
+
+                        </div>
+                        <div class='source-code'>
+                            <h2>Original Source Code</h2>
+                            <pre><code>using System.Text;
+using Newtonsoft.Json;
+
+namespace ChatGPT_API
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            var apiKey = &quot;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&quot;;
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Add(&quot;Authorization&quot;, $&quot;Bearer {apiKey}&quot;);
+
+            Console.WriteLine(&quot;Enter the directory path:&quot;);
+            string sourceDirectoryPath = Console.ReadLine();
+
+            string baseOutputDirectory = @&quot;C:\ChatGPTMetadata\&quot;;
+
+            var files = Directory.GetFiles(sourceDirectoryPath, &quot;*.cs&quot;, SearchOption.AllDirectories);
+            int totalFiles = files.Length;
+            int processedFiles = 0;
+
+            Console.WriteLine($&quot;Total files to process: {totalFiles}&quot;);
+
+            foreach (var file in files)
+            {
+                Console.WriteLine($&quot;{processedFiles}/{totalFiles} Processing file: {file}&quot;);
+
+                string fileContent = File.ReadAllText(file);
+                string prompt = &quot;Create a summary of what this file does, which models it depends on.\n\n&quot; + fileContent;
+
+                var requestData = new
+                {
+                    model = &quot;gpt-4-0613&quot;,
+                    messages = new[]
+                    {
+                        new { role = &quot;user&quot;, content = prompt }
+                    }
+                };
+
+                string json = JsonConvert.SerializeObject(requestData);
+
+                var data = new StringContent(
+                    json,
+                    Encoding.UTF8,
+                    &quot;application/json&quot;);
+
+                var response = await httpClient.PostAsync(&quot;https://api.openai.com/v1/chat/completions&quot;, data);
+                var responseString = await response.Content.ReadAsStringAsync();
+
+                string relativePath = Path.GetRelativePath(sourceDirectoryPath, file);
+                string metadataFilePath = Path.Combine(baseOutputDirectory, relativePath);
+                string metadataDirectory = Path.GetDirectoryName(metadataFilePath);
+
+                if (!Directory.Exists(metadataDirectory))
+                {
+                    Directory.CreateDirectory(metadataDirectory);
+                }
+
+                metadataFilePath = Path.ChangeExtension(metadataFilePath, &quot;_metadata.txt&quot;);
+                await File.WriteAllTextAsync(metadataFilePath, responseString);
+
+                processedFiles++;
+            }
+
+            Console.WriteLine($&quot;Processed files: {processedFiles} of {totalFiles}&quot;);
+        }
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                </body>
+                </html>
